@@ -60,8 +60,8 @@
   * @{
   */
 
-#define MICROSTEPPING_MOTOR_EXAMPLE        //!< Uncomment to performe the standalone example
-//#define MICROSTEPPING_MOTOR_USART_EXAMPLE  //!< Uncomment to performe the USART example
+//#define MICROSTEPPING_MOTOR_EXAMPLE        //!< Uncomment to performe the standalone example
+#define MICROSTEPPING_MOTOR_USART_EXAMPLE  //!< Uncomment to performe the USART example
 #if ((defined (MICROSTEPPING_MOTOR_EXAMPLE)) && (defined (MICROSTEPPING_MOTOR_USART_EXAMPLE)))
   #error "Please select an option only!"
 #elif ((!defined (MICROSTEPPING_MOTOR_EXAMPLE)) && (!defined (MICROSTEPPING_MOTOR_USART_EXAMPLE)))
@@ -70,6 +70,8 @@
 #if (defined (MICROSTEPPING_MOTOR_USART_EXAMPLE) && (!defined (NUCLEO_USE_USART)))
   #error "Please define "NUCLEO_USE_USART" in "stm32fxxx_x-nucleo-ihm02a1.h"!"
 #endif
+
+#define GPIO_PIN_SET 1
 
 /**
   * @}
@@ -85,7 +87,34 @@ int main(void)
   
   /* X-NUCLEO-IHM02A1 initialization */
   BSP_Init();
-  
+
+  GPIO_InitTypeDef GPIO_InitStruct;
+
+  __GPIOA_CLK_ENABLE();
+
+  /* Configure Button pin as input */
+  GPIO_InitStruct.Pin = GPIO_PIN_8;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FAST;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FAST;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  while (1){
+	  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+	  if(HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4)){
+		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+	  }
+	  else{
+		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+	  }
+  }
+
 #ifdef NUCLEO_USE_USART
   /* Transmit the initial message to the PC via UART */
   USART_TxWelcomeMessage();
@@ -96,7 +125,9 @@ int main(void)
   MicrosteppingMotor_Example_01();
   
   /* Infinite loop */
-  while (1);
+  while (1){
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+  }
 #elif defined (MICROSTEPPING_MOTOR_USART_EXAMPLE)
   /* Fill the L6470_DaisyChainMnemonic structure */
   Fill_L6470_DaisyChainMnemonic();
@@ -106,6 +137,8 @@ int main(void)
   {
     /* Check if any Application Command for L6470 has been entered by USART */
     USART_CheckAppCmd();
+
+
   }
 #endif
 }
